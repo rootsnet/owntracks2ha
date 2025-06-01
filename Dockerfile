@@ -34,7 +34,7 @@ RUN go mod init owntracks2ha && \
 
 # Build the application binary
 RUN mkdir -p /app/bin && \
-    go build -o /app/bin/owntracks2ha /app/src/main.go -v -ldflags "-s -w"
+    go build -o /app/bin/owntracks2ha /app/src/main.go
 
 # ───────────────────────────────────────────────
 
@@ -47,7 +47,7 @@ RUN apt update && apt install -y --no-install-recommends ca-certificates && \
 
 # Copy binary from builder stage
 COPY --from=builder /app/bin/owntracks2ha /app/bin/owntracks2ha
-COPY --from=builder /app/config /app/config  # if you need config files too (optional)
+COPY --from=builder /app/config /app/config
 
 # Ensure the binary path is in the environment PATH
 ENV PATH="/app/bin:$PATH"
