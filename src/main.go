@@ -40,6 +40,7 @@ type Config struct {
         UseTLS       bool              `yaml:"use_tls"`
         RunMode      string            `yaml:"run_mode"`
         QoS          int               `yaml:"qos"`
+        Debug        bool              `yaml:"debug"`
         Mappings     map[string]string `yaml:"mappings"`
 }
 
@@ -114,6 +115,13 @@ func messageHandler(client MQTT.Client, msg MQTT.Message) {
         if !exists {
                 log.Printf("No mapping found for topic: %s", subTopic)
                 return
+        }
+        
+        if config.Debug {
+                raw, _ := json.MarshalIndent(source, "", "  ")
+                conv, _ := json.MarshalIndent(converted, "", "  ")
+                log.Printf("[DEBUG] Original data from %s:\n%s", subTopic, raw)
+                log.Printf("[DEBUG] Converted data to %s:\n%s", pubTopic, conv)
         }
 
         payload, err := json.Marshal(converted)
