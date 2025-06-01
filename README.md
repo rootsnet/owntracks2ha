@@ -11,13 +11,13 @@ Create `config/config.yaml` with the following structure:
 ```yaml
 source_broker: "mqtt1.example.com"
 source_port: 1883
-source_user: "user1"
-source_pass: "pass1"
+source_user: "source_owntracks2ha_user"
+source_pass: "source_owntracks2ha_pass"
 
 target_broker: "mqtt2.example.com"
 target_port: 1883
-target_user: "user2"
-target_pass: "pass2"
+target_user: "target_owntracks2ha_user"
+target_pass: "target_owntracks2ha_pass"
 
 use_tls: false
 qos: 1
