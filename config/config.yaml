@@ -1,0 +1,19 @@
+# Configuration file for OwnTracks to Home Assistant MQTT bridge
+
+source_broker: "<mqtt1 address>"   # e.g., mqtt1.example.com
+source_port: <mqtt1 port>          # e.g., 1883
+source_user: "<mqtt1 username>"
+source_pass: "<mqtt1 password>"
+
+target_broker: "<mqtt2 address>"   # e.g., mqtt2.example.com
+target_port: <mqtt2 port>          # e.g., 1883
+target_user: "<mqtt2 username>"
+target_pass: "<mqtt2 password>"
+
+use_tls: false                     # Set to true if using TLS
+qos: 1                             # MQTT Quality of Service level (0, 1, or 2)
+run_mode: "daemon"                 # "daemon": run continuously, "once": run once and exit
+
+# Mapping from source to target topics
+mappings:
+  owntracks/<mqtt1 username>/<device_id>: owntracks_converted/<mqtt1 username>/<device_id>
