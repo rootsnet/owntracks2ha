@@ -1,4 +1,4 @@
-# owntracks2ha
+# Owntracks2HA
 
 `owntracks2ha` is a lightweight MQTT bridge that listens to [OwnTracks](https://owntracks.org/) messages from one MQTT broker and republishes them to another MQTT broker in a format compatible with [Home Assistant](https://www.home-assistant.io/).
 
