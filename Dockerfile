@@ -45,6 +45,10 @@ FROM ubuntu:24.04
 RUN apt update && apt install -y --no-install-recommends ca-certificates && \
     apt clean && rm -rf /var/lib/apt/lists/*
 
+# Copy binary from builder stage
+COPY --from=builder /app/bin/owntracks2ha /app/bin/owntracks2ha
+COPY --from=builder /app/config /app/config  # if you need config files too (optional)
+
 # Ensure the binary path is in the environment PATH
 ENV PATH="/app/bin:$PATH"
 
@@ -52,4 +56,4 @@ ENV PATH="/app/bin:$PATH"
 WORKDIR /app
 
 # Set the default command to run the application
-CMD ["./bin/owntracks2ha"]
+CMD ["owntracks2ha"]
