@@ -7,9 +7,9 @@ import (
 	"log"
 	"os"
 	"time"
+	"gopkg.in/yaml.v2"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"gopkg.in/yaml.v2"
 )
 
 type SourceData struct {
@@ -155,7 +155,6 @@ func main() {
 		log.Printf("Source MQTT connection failed: %v", token.Error())
 		os.Exit(1)
 	}
-
 	for !sourceClient.IsConnected() {
 		log.Println("Waiting for Source MQTT connection to establish...")
 		time.Sleep(500 * time.Millisecond)
@@ -166,8 +165,13 @@ func main() {
 	log.Printf("Connecting to Target MQTT broker: %s", targetBroker)
 	targetOpts := configureMQTTClientOptions(targetBroker, "mqtt_publisher", config.TargetUser, config.TargetPass, config.UseTLS)
 	targetClient = MQTT.NewClient(targetOpts)
-	if token := targetClient.Connect(); token.Wait() && token.Error() != nil {
+	token = targetClient.Connect()
+	if token.Wait() && token.Error() != nil {
 		log.Fatalf("Target MQTT connection failed: %v", token.Error())
+	}
+	for !targetClient.IsConnected() {
+		log.Println("Waiting for Target MQTT connection to establish...")
+		time.Sleep(500 * time.Millisecond)
 	}
 	log.Println("Connected to Target MQTT broker")
 
