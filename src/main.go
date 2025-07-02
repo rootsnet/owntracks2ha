@@ -149,16 +149,15 @@ func main() {
 	loadConfig("config/config.yaml")
 	log.Println("Configuration loaded successfully.")
 
+	// Source broker setup
 	sourceBroker := getBrokerURL(config.SourceBroker, config.SourcePort, config.UseTLS)
 	log.Printf("Connecting to Source MQTT broker: %s", sourceBroker)
 	sourceOpts := configureMQTTClientOptions(sourceBroker, "mqtt_converter", config.SourceUser, config.SourcePass, config.UseTLS)
 	sourceOpts.SetDefaultPublishHandler(messageHandler)
-
 	sourceClient := MQTT.NewClient(sourceOpts)
 	token := sourceClient.Connect()
 	if token.Wait() && token.Error() != nil {
-		log.Printf("Source MQTT connection failed: %v", token.Error())
-		os.Exit(1)
+		log.Fatalf("Source MQTT connection failed: %v", token.Error())
 	}
 	for !sourceClient.IsConnected() {
 		log.Println("Waiting for Source MQTT connection to establish...")
@@ -166,6 +165,7 @@ func main() {
 	}
 	log.Println("Connected to Source MQTT broker")
 
+	// Target broker setup
 	targetBroker := getBrokerURL(config.TargetBroker, config.TargetPort, config.UseTLS)
 	log.Printf("Connecting to Target MQTT broker: %s", targetBroker)
 	targetOpts := configureMQTTClientOptions(targetBroker, "mqtt_publisher", config.TargetUser, config.TargetPass, config.UseTLS)
@@ -180,13 +180,24 @@ func main() {
 	}
 	log.Println("Connected to Target MQTT broker")
 
+	// Subscribe to topics with retries
 	for subTopic := range config.Mappings {
 		log.Printf("Subscribing to topic: %s", subTopic)
-		token := sourceClient.Subscribe(subTopic, byte(config.QoS), nil)
-		if token.Wait() && token.Error() != nil {
-			log.Printf("MQTT subscription failed for topic %s: %v", subTopic, token.Error())
-		} else {
-			log.Printf("Successfully subscribed to topic: %s", subTopic)
+		for attempt := 1; attempt <= 5; attempt++ {
+			if !sourceClient.IsConnected() {
+				log.Printf("Client not connected yet. Waiting to subscribe: %s", subTopic)
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			token := sourceClient.Subscribe(subTopic, byte(config.QoS), nil)
+			token.Wait()
+			if token.Error() != nil {
+				log.Printf("Subscription attempt %d failed for topic %s: %v", attempt, subTopic, token.Error())
+				time.Sleep(1 * time.Second)
+			} else {
+				log.Printf("Successfully subscribed to topic: %s", subTopic)
+				break
+			}
 		}
 	}
 
