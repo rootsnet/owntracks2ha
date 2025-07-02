@@ -7,9 +7,9 @@ import (
 	"log"
 	"os"
 	"time"
-	"gopkg.in/yaml.v2"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
+	"gopkg.in/yaml.v2"
 )
 
 type SourceData struct {
@@ -29,23 +29,26 @@ type ConvertedData struct {
 }
 
 type Config struct {
-	SourceBroker string            `yaml:"source_broker"`
-	SourcePort   int               `yaml:"source_port"`
-	SourceUser   string            `yaml:"source_user"`
-	SourcePass   string            `yaml:"source_pass"`
-	TargetBroker string            `yaml:"target_broker"`
-	TargetPort   int               `yaml:"target_port"`
-	TargetUser   string            `yaml:"target_user"`
-	TargetPass   string            `yaml:"target_pass"`
-	UseTLS       bool              `yaml:"use_tls"`
-	RunMode      string            `yaml:"run_mode"`
-	QoS          int               `yaml:"qos"`
-	Debug        bool              `yaml:"debug"`
-	Mappings     map[string]string `yaml:"mappings"`
+	SourceBroker        string            `yaml:"source_broker"`
+	SourcePort          int               `yaml:"source_port"`
+	SourceUser          string            `yaml:"source_user"`
+	SourcePass          string            `yaml:"source_pass"`
+	TargetBroker        string            `yaml:"target_broker"`
+	TargetPort          int               `yaml:"target_port"`
+	TargetUser          string            `yaml:"target_user"`
+	TargetPass          string            `yaml:"target_pass"`
+	UseTLS              bool              `yaml:"use_tls"`
+	RunMode             string            `yaml:"run_mode"`
+	QoS                 int               `yaml:"qos"`
+	Debug               bool              `yaml:"debug"`
+	Mappings            map[string]string `yaml:"mappings"`
+	ExitOnIdle          bool              `yaml:"exit_on_idle"`
+	IdleTimeoutSeconds  int               `yaml:"idle_timeout_seconds"`
 }
 
 var config Config
 var targetClient MQTT.Client
+var lastMessageTime time.Time
 
 func loadConfig(filename string) {
 	file, err := os.ReadFile(filename)
@@ -89,6 +92,8 @@ func configureMQTTClientOptions(broker, clientID, username, password string, use
 }
 
 func messageHandler(client MQTT.Client, msg MQTT.Message) {
+	lastMessageTime = time.Now()
+
 	log.Printf("Received message from source topic: %s, payload: %s", msg.Topic(), string(msg.Payload()))
 
 	var source SourceData
@@ -183,6 +188,22 @@ func main() {
 		} else {
 			log.Printf("Successfully subscribed to topic: %s", subTopic)
 		}
+	}
+
+	lastMessageTime = time.Now()
+
+	if config.ExitOnIdle && config.IdleTimeoutSeconds > 0 {
+		go func() {
+			for {
+				time.Sleep(5 * time.Second)
+				if time.Since(lastMessageTime) > time.Duration(config.IdleTimeoutSeconds)*time.Second {
+					log.Printf("No messages received for %d seconds. Exiting.", config.IdleTimeoutSeconds)
+					sourceClient.Disconnect(250)
+					targetClient.Disconnect(250)
+					os.Exit(0)
+				}
+			}
+		}()
 	}
 
 	if config.RunMode == "once" {
