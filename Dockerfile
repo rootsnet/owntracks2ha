@@ -7,10 +7,13 @@ ENV GO_VERSION=1.23.2
 
 # Install required packages and download Go
 RUN apt update && apt install -y --no-install-recommends \
-    wget git curl ca-certificates build-essential && \
-    wget -nv https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz && \
-    rm go${GO_VERSION}.linux-amd64.tar.gz
+    wget curl git ca-certificates build-essential tzdata && \
+    GO_VERSION=$(curl -s https://go.dev/VERSION?m=text | head -n 1) && \
+    wget -nv https://go.dev/dl/${GO_VERSION}.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf ${GO_VERSION}.linux-amd64.tar.gz && \
+    rm ${GO_VERSION}.linux-amd64.tar.gz && \
+    ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime && \
+    echo "Asia/Seoul" > /etc/timezone
 
 # Set Go environment variables
 ENV GOROOT=/usr/local/go \
@@ -26,11 +29,11 @@ RUN git clone https://github.com/rootsnet/owntracks2ha.git .
 # Initialize Go module and install dependencies
 WORKDIR /app/src
 RUN go mod init owntracks2ha && \
-    go get github.com/eclipse/paho.mqtt.golang@v1.5.0 && \
-    go get github.com/gorilla/websocket@v1.5.3 && \
-    go get golang.org/x/net@v0.27.0 && \
-    go get golang.org/x/sync@v0.7.0 && \
-    go get gopkg.in/yaml.v2@v2.4.0
+    go get github.com/eclipse/paho.mqtt.golang && \
+    go get github.com/gorilla/websocket && \
+    go get golang.org/x/net && \
+    go get golang.org/x/sync && \
+    go get gopkg.in/yaml.v2
 
 # Build the application binary
 RUN mkdir -p /app/bin && \
@@ -42,7 +45,10 @@ RUN mkdir -p /app/bin && \
 FROM ubuntu:24.04
 
 # Install CA certificates for TLS support
-RUN apt update && apt install -y --no-install-recommends ca-certificates && \
+RUN apt update && apt install -y --no-install-recommends \
+    ca-certificates tzdata && \
+    ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime && \
+    echo "Asia/Seoul" > /etc/timezone && \
     apt clean && rm -rf /var/lib/apt/lists/*
 
 # Copy binary from builder stage
