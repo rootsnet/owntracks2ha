@@ -13,6 +13,8 @@ target_pass: "<mqtt2 password>"
 use_tls: false                     # Set to true if using TLS
 qos: 1                             # MQTT Quality of Service level (0, 1, or 2)
 run_mode: "daemon"                 # "daemon": run continuously, "once": run once and exit
+exit_on_idle: true
+idle_timeout_seconds: 60
 
 # Mapping from source to target topics
 mappings:
